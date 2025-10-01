@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../helpers/database");
+const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
 
 const Vehiculo = sequelize.define('Vehiculo', {
     id: {
@@ -20,14 +20,15 @@ const Vehiculo = sequelize.define('Vehiculo', {
         allowNull: false
     },
     placa: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false
     },
     usuario_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     }
+}, {
+    timestamps: true // ✅ Agregar esto
 });
 
 module.exports = Vehiculo;
-

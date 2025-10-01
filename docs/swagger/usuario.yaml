@@ -1,0 +1,617 @@
+tags:
+  - name: Usuarios
+    description: Endpoints para gestión de usuarios del sistema
+
+paths:
+  /usuarios:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener todos los usuarios
+      description: Retorna una lista paginada de usuarios con opciones de filtrado (requiere autenticación y rol admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: pagina
+          in: query
+          description: Número de página para paginación
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limite
+          in: query
+          description: Número de elementos por página (máximo 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+            example: 10
+        - name: rol
+          in: query
+          description: Filtrar por rol de usuario
+          required: false
+          schema:
+            type: string
+            enum: [admin, mecanico, cliente, recepcionista]
+            example: cliente
+        - name: buscar
+          in: query
+          description: Buscar en nombre, email o teléfono
+          required: false
+          schema:
+            type: string
+            example: "Juan"
+      responses:
+        '200':
+          description: Lista de usuarios obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+                  total:
+                    type: integer
+                    example: 50
+                  paginas:
+                    type: integer
+                    example: 5
+                  pagina:
+                    type: integer
+                    example: 1
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSimple'
+        '403':
+          description: Acceso denegado (se requiere rol admin)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Usuarios
+      summary: Crear un nuevo usuario
+      description: Crea un nuevo usuario en el sistema (requiere autenticación y rol admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearUsuarioRequest'
+            examples:
+              UsuarioCliente:
+                summary: Usuario cliente
+                value:
+                  nombre: "Juan Pérez"
+                  email: "juan.perez@email.com"
+                  password: "password123"
+                  telefono: "+1234567890"
+              UsuarioMecanico:
+                summary: Usuario mecánico
+                value:
+                  nombre: "Carlos López"
+                  email: "carlos.lopez@taller.com"
+                  password: "password123"
+                  rol: "mecanico"
+                  telefono: "+1234567891"
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Usuario creado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          description: Error en la solicitud
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidacion'
+                  - $ref: '#/components/schemas/ErrorSimple'
+        '401':
+          description: No autorizado
+        '403':
+          description: Acceso denegado (se requiere rol admin)
+        '500':
+          description: Error interno del servidor
+
+  /usuarios/{id}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener un usuario por ID
+      description: Retorna los detalles de un usuario específico (requiere autenticación)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Usuario encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+        '401':
+          description: No autorizado
+        '404':
+          description: Usuario no encontrado
+        '500':
+          description: Error interno del servidor
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar un usuario existente
+      description: Actualiza los datos de un usuario existente (requiere autenticación)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario a actualizar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarUsuarioRequest'
+            examples:
+              ActualizacionParcial:
+                summary: Actualización parcial
+                value:
+                  nombre: "Juan Carlos Pérez"
+                  telefono: "+1234567899"
+              ActualizacionCompleta:
+                summary: Actualización completa
+                value:
+                  nombre: "Juan Carlos Pérez"
+                  email: "juan.carlos@email.com"
+                  password: "nuevopassword123"
+                  rol: "mecanico"
+                  telefono: "+1234567899"
+      responses:
+        '200':
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Usuario actualizado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          description: Error en la solicitud
+        '401':
+          description: No autorizado
+        '404':
+          description: Usuario no encontrado
+        '500':
+          description: Error interno del servidor
+
+    delete:
+      tags:
+        - Usuarios
+      summary: Eliminar un usuario
+      description: Elimina permanentemente un usuario del sistema (requiere autenticación y rol admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del usuario a eliminar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Usuario eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Usuario eliminado exitosamente"
+        '400':
+          description: No se puede eliminar el propio usuario o tiene registros asociados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSimple'
+        '401':
+          description: No autorizado
+        '403':
+          description: Acceso denegado (se requiere rol admin)
+        '404':
+          description: Usuario no encontrado
+        '500':
+          description: Error interno del servidor
+
+  /usuarios/perfil/mi-perfil:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener perfil del usuario actual
+      description: Retorna los datos del usuario autenticado actualmente
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+        '401':
+          description: No autorizado
+        '404':
+          description: Usuario no encontrado
+        '500':
+          description: Error interno del servidor
+
+    put:
+      tags:
+        - Usuarios
+      summary: Actualizar perfil del usuario actual
+      description: Permite al usuario actualizar su propio perfil, incluyendo cambio de contraseña
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilRequest'
+            examples:
+              ActualizacionBasica:
+                summary: Actualización básica
+                value:
+                  nombre: "Mi Nuevo Nombre"
+                  telefono: "+1234567899"
+              CambioPassword:
+                summary: Cambio de contraseña
+                value:
+                  password_actual: "password123"
+                  nuevo_password: "nuevopassword123"
+                  telefono: "+1234567899"
+      responses:
+        '200':
+          description: Perfil actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Perfil actualizado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          description: Error en la solicitud (contraseña actual incorrecta, etc.)
+        '401':
+          description: No autorizado
+        '404':
+          description: Usuario no encontrado
+        '500':
+          description: Error interno del servidor
+
+  /usuarios/rol/{rol}:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener usuarios por rol
+      description: Retorna todos los usuarios con un rol específico (requiere autenticación)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: rol
+          in: path
+          required: true
+          description: Rol de los usuarios a buscar
+          schema:
+            type: string
+            enum: [admin, mecanico, cliente, recepcionista]
+            example: mecanico
+      responses:
+        '200':
+          description: Lista de usuarios por rol obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Usuario'
+                  total:
+                    type: integer
+                    example: 15
+                  rol:
+                    type: string
+                    example: "mecanico"
+        '400':
+          description: Rol no válido
+        '401':
+          description: No autorizado
+        '500':
+          description: Error interno del servidor
+
+  /usuarios/estadisticas/totales:
+    get:
+      tags:
+        - Usuarios
+      summary: Obtener estadísticas de usuarios
+      description: Retorna estadísticas generales de usuarios (requiere autenticación y rol admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Estadísticas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      total_usuarios:
+                        type: integer
+                        example: 150
+                      por_rol:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            rol:
+                              type: string
+                              example: "cliente"
+                            total:
+                              type: integer
+                              example: 120
+                      recientes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Usuario'
+        '401':
+          description: No autorizado
+        '403':
+          description: Acceso denegado (se requiere rol admin)
+        '500':
+          description: Error interno del servidor
+
+components:
+  schemas:
+    # Esquema base de Usuario (sin password)
+    Usuario:
+      type: object
+      required:
+        - id
+        - nombre
+        - email
+        - rol
+      properties:
+        id:
+          type: integer
+          description: ID único del usuario
+          example: 1
+        nombre:
+          type: string
+          description: Nombre completo del usuario
+          example: "Juan Pérez"
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+          example: "juan.perez@email.com"
+        rol:
+          type: string
+          enum: [admin, mecanico, cliente, recepcionista]
+          description: Rol del usuario en el sistema
+          example: "cliente"
+        telefono:
+          type: string
+          description: Número de teléfono del usuario
+          example: "+1234567890"
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2024-01-10T15:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de última actualización
+          example: "2024-01-10T15:30:00.000Z"
+
+    # Requests
+    CrearUsuarioRequest:
+      type: object
+      required:
+        - nombre
+        - email
+        - password
+      properties:
+        nombre:
+          type: string
+          description: Nombre completo del usuario
+          example: "Juan Pérez"
+          minLength: 2
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          description: Email del usuario (debe ser único)
+          example: "juan.perez@email.com"
+        password:
+          type: string
+          description: Contraseña del usuario
+          example: "password123"
+          minLength: 6
+        rol:
+          type: string
+          enum: [admin, mecanico, cliente, recepcionista]
+          description: Rol del usuario (por defecto 'cliente')
+          example: "cliente"
+          default: "cliente"
+        telefono:
+          type: string
+          description: Número de teléfono del usuario
+          example: "+1234567890"
+          nullable: true
+
+    ActualizarUsuarioRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: Nuevo nombre completo
+          example: "Juan Carlos Pérez"
+          minLength: 2
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          description: Nuevo email (debe ser único)
+          example: "juan.carlos@email.com"
+        password:
+          type: string
+          description: Nueva contraseña
+          example: "nuevopassword123"
+          minLength: 6
+        rol:
+          type: string
+          enum: [admin, mecanico, cliente, recepcionista]
+          description: Nuevo rol del usuario
+          example: "mecanico"
+        telefono:
+          type: string
+          description: Nuevo número de teléfono
+          example: "+1234567899"
+          nullable: true
+
+    ActualizarPerfilRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: Nuevo nombre completo
+          example: "Mi Nuevo Nombre"
+          minLength: 2
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          description: Nuevo email (debe ser único)
+          example: "nuevo.email@email.com"
+        telefono:
+          type: string
+          description: Nuevo número de teléfono
+          example: "+1234567899"
+          nullable: true
+        password_actual:
+          type: string
+          description: Contraseña actual (requerida para cambiar contraseña)
+          example: "password123"
+        nuevo_password:
+          type: string
+          description: Nueva contraseña (requerida para cambiar contraseña)
+          example: "nuevopassword123"
+          minLength: 6
+
+    # Esquemas de seguridad
+    SecurityScheme:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+# Configuración de seguridad global
+securitySchemes:
+  bearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: "Ingrese el token JWT en el formato: Bearer {token}"

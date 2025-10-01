@@ -1,0 +1,643 @@
+tags:
+  - name: Citas
+    description: Endpoints para gestión de citas del taller
+
+paths:
+  /citas:
+    get:
+      tags:
+        - Citas
+      summary: Obtener todas las citas
+      description: Retorna una lista paginada de citas con opciones de filtrado por estado y fecha
+      parameters:
+        - name: pagina
+          in: query
+          description: Número de página para paginación
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limite
+          in: query
+          description: Número de elementos por página (máximo 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+            example: 10
+        - name: estado
+          in: query
+          description: Filtrar por estado de la cita
+          required: false
+          schema:
+            type: string
+            enum: [programada, confirmada, en_proceso, completada, cancelada]
+            example: programada
+        - name: fecha
+          in: query
+          description: Filtrar por fecha específica (formato YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2024-01-15"
+      responses:
+        '200':
+          description: Lista de citas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CitaConRelaciones'
+                  total:
+                    type: integer
+                    example: 50
+                  paginas:
+                    type: integer
+                    example: 5
+                  pagina:
+                    type: integer
+                    example: 1
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Citas
+      summary: Crear una nueva cita
+      description: Crea una nueva cita en el sistema con validación de conflictos de horario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearCitaRequest'
+            examples:
+              CitaBasica:
+                summary: Cita básica
+                value:
+                  fecha: "2024-01-15"
+                  hora: "10:30:00"
+                  descripcion: "Cambio de aceite y filtro"
+                  usuario_id: 1
+                  vehiculo_id: 1
+              CitaCompleta:
+                summary: Cita con estado específico
+                value:
+                  fecha: "2024-01-15"
+                  hora: "14:00:00"
+                  descripcion: "Revisión general del vehículo"
+                  estado: "confirmada"
+                  usuario_id: 2
+                  vehiculo_id: 3
+      responses:
+        '201':
+          description: Cita creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cita creada exitosamente"
+                  data:
+                    $ref: '#/components/schemas/CitaConRelaciones'
+        '400':
+          description: Error en la solicitud
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidacion'
+                  - $ref: '#/components/schemas/ErrorRelacion'
+                example:
+                  success: false
+                  message: "Ya existe una cita programada para esta fecha y hora"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /citas/{id}:
+    get:
+      tags:
+        - Citas
+      summary: Obtener una cita por ID
+      description: Retorna los detalles completos de una cita específica incluyendo información de usuario y vehículo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la cita
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Cita encontrada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CitaDetallada'
+        '404':
+          description: Cita no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Citas
+      summary: Actualizar una cita existente
+      description: Actualiza los datos de una cita existente con validación de conflictos de horario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la cita a actualizar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarCitaRequest'
+            examples:
+              ActualizacionParcial:
+                summary: Actualización parcial
+                value:
+                  estado: "completada"
+                  descripcion: "Servicio completado exitosamente"
+              ActualizacionCompleta:
+                summary: Actualización completa
+                value:
+                  fecha: "2024-01-16"
+                  hora: "11:00:00"
+                  descripcion: "Reprogramación de cita"
+                  estado: "programada"
+                  usuario_id: 1
+                  vehiculo_id: 2
+      responses:
+        '200':
+          description: Cita actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cita actualizada exitosamente"
+                  data:
+                    $ref: '#/components/schemas/CitaConRelaciones'
+        '400':
+          description: Error en la solicitud
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidacion'
+                  - $ref: '#/components/schemas/ErrorRelacion'
+        '404':
+          description: Cita no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Citas
+      summary: Eliminar una cita
+      description: Elimina permanentemente una cita del sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la cita a eliminar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Cita eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cita eliminada exitosamente"
+        '404':
+          description: Cita no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /citas/usuario/{usuarioId}:
+    get:
+      tags:
+        - Citas
+      summary: Obtener citas por usuario
+      description: Retorna todas las citas asociadas a un usuario específico
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          description: ID del usuario
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: estado
+          in: query
+          description: Filtrar por estado de la cita
+          required: false
+          schema:
+            type: string
+            enum: [programada, confirmada, en_proceso, completada, cancelada]
+            example: programada
+      responses:
+        '200':
+          description: Lista de citas del usuario obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CitaConVehiculo'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /citas/vehiculo/{vehiculoId}:
+    get:
+      tags:
+        - Citas
+      summary: Obtener citas por vehículo
+      description: Retorna todas las citas asociadas a un vehículo específico
+      parameters:
+        - name: vehiculoId
+          in: path
+          required: true
+          description: ID del vehículo
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Lista de citas del vehículo obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CitaConUsuario'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    # Esquema base de Cita
+    Cita:
+      type: object
+      required:
+        - id
+        - fecha
+        - hora
+        - descripcion
+        - estado
+        - usuario_id
+        - vehiculo_id
+      properties:
+        id:
+          type: integer
+          description: ID único de la cita
+          example: 1
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la cita (YYYY-MM-DD)
+          example: "2024-01-15"
+        hora:
+          type: string
+          format: time
+          description: Hora de la cita (HH:MM:SS)
+          example: "10:30:00"
+        descripcion:
+          type: string
+          description: Descripción del servicio solicitado
+          example: "Cambio de aceite y filtro de aire"
+        estado:
+          type: string
+          enum: [programada, confirmada, en_proceso, completada, cancelada]
+          description: Estado actual de la cita
+          example: "programada"
+        usuario_id:
+          type: integer
+          description: ID del usuario dueño del vehículo
+          example: 1
+        vehiculo_id:
+          type: integer
+          description: ID del vehículo a atender
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2024-01-10T15:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de última actualización
+          example: "2024-01-10T15:30:00.000Z"
+
+    # Esquemas con relaciones
+    CitaConRelaciones:
+      allOf:
+        - $ref: '#/components/schemas/Cita'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioResumen'
+            vehiculo:
+              $ref: '#/components/schemas/VehiculoResumen'
+
+    CitaDetallada:
+      allOf:
+        - $ref: '#/components/schemas/Cita'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioCompleto'
+            vehiculo:
+              $ref: '#/components/schemas/VehiculoCompleto'
+
+    CitaConVehiculo:
+      allOf:
+        - $ref: '#/components/schemas/Cita'
+        - type: object
+          properties:
+            vehiculo:
+              $ref: '#/components/schemas/VehiculoResumen'
+
+    CitaConUsuario:
+      allOf:
+        - $ref: '#/components/schemas/Cita'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioResumen'
+
+    # Modelos relacionados
+    UsuarioResumen:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Juan"
+        apellido:
+          type: string
+          example: "Pérez"
+        email:
+          type: string
+          format: email
+          example: "juan.perez@email.com"
+
+    UsuarioCompleto:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioResumen'
+        - type: object
+          properties:
+            telefono:
+              type: string
+              example: "+1234567890"
+
+    VehiculoResumen:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        marca:
+          type: string
+          example: "Toyota"
+        modelo:
+          type: string
+          example: "Corolla"
+        placa:
+          type: string
+          example: "ABC123"
+
+    VehiculoCompleto:
+      allOf:
+        - $ref: '#/components/schemas/VehiculoResumen'
+        - type: object
+          properties:
+            año:
+              type: integer
+              example: 2020
+            vin:
+              type: string
+              example: "1HGCM82633A123456"
+
+    # Requests
+    CrearCitaRequest:
+      type: object
+      required:
+        - fecha
+        - hora
+        - usuario_id
+        - vehiculo_id
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la cita (YYYY-MM-DD)
+          example: "2024-01-15"
+        hora:
+          type: string
+          format: time
+          description: Hora de la cita (HH:MM:SS)
+          example: "10:30:00"
+        descripcion:
+          type: string
+          description: Descripción del servicio requerido
+          example: "Cambio de aceite y filtro"
+          default: ""
+        estado:
+          type: string
+          enum: [programada, confirmada, en_proceso, completada, cancelada]
+          description: Estado inicial de la cita
+          default: "programada"
+          example: "programada"
+        usuario_id:
+          type: integer
+          description: ID del usuario dueño del vehículo
+          example: 1
+        vehiculo_id:
+          type: integer
+          description: ID del vehículo a atender
+          example: 1
+
+    ActualizarCitaRequest:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Nueva fecha de la cita
+          example: "2024-01-16"
+        hora:
+          type: string
+          format: time
+          description: Nueva hora de la cita
+          example: "11:00:00"
+        descripcion:
+          type: string
+          description: Nueva descripción del servicio
+          example: "Servicio completado exitosamente"
+        estado:
+          type: string
+          enum: [programada, confirmada, en_proceso, completada, cancelada]
+          description: Nuevo estado de la cita
+          example: "completada"
+        usuario_id:
+          type: integer
+          description: Nuevo ID de usuario
+          example: 1
+        vehiculo_id:
+          type: integer
+          description: Nuevo ID de vehículo
+          example: 1
+
+    # Respuestas de error
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error interno del servidor"
+        error:
+          type: string
+          example: "Error details here"
+
+    ErrorSimple:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Cita no encontrada"
+
+    ErrorValidacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error de validación"
+        errors:
+          type: array
+          items:
+            type: string
+          example: ["Fecha es requerida", "Hora es requerida"]
+
+    ErrorRelacion:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error en relación: usuario o vehículo no existe"

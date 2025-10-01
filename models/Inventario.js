@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../helpers/database");
+const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
 
 const Inventario = sequelize.define('Inventario', {
     id: {
@@ -20,14 +20,15 @@ const Inventario = sequelize.define('Inventario', {
         allowNull: false
     },
     precio: {
-        type: DataTypes.STRING,
-        allowNull:false
-    },
-    stock: {
-        type: DataTypes.STRING,
+        type: DataTypes.DECIMAL(10, 2),
         allowNull: false
     },
-
-})
+    stock: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+}, {
+    timestamps: true // ✅ Agregar esto
+});
 
 module.exports = Inventario;

@@ -1,6 +1,5 @@
-// models/InventarioReparacion.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
 
 const Inventario_Reparacion = sequelize.define('Inventario_Reparacion', {
     id: {
@@ -10,39 +9,23 @@ const Inventario_Reparacion = sequelize.define('Inventario_Reparacion', {
     },
     reparacion_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'reparaciones',
-            key: 'id'
-        }
+        allowNull: false
     },
     inventario_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'inventario',
-            key: 'id'
-        }
+        allowNull: false
     },
     cantidad: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 1,
-        validate: {
-            min: 1
-        }
+        defaultValue: 1
     },
     precio_unitario: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false
-    },
-    created_at: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
     }
 }, {
-    tableName: 'inventario_reparacion',
-    timestamps: false
+    timestamps: true // ✅ Agregar esto
 });
 
 module.exports = Inventario_Reparacion;

@@ -1,0 +1,660 @@
+tags:
+  - name: Reparaciones
+    description: Endpoints para gestión de reparaciones del taller
+
+paths:
+  /reparaciones:
+    get:
+      tags:
+        - Reparaciones
+      summary: Obtener todas las reparaciones
+      description: Retorna una lista paginada de reparaciones con opciones de filtrado avanzado
+      parameters:
+        - name: pagina
+          in: query
+          description: Número de página para paginación
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limite
+          in: query
+          description: Número de elementos por página (máximo 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+            example: 10
+        - name: usuario_id
+          in: query
+          description: Filtrar por ID del mecánico/usuario
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: vehiculo_id
+          in: query
+          description: Filtrar por ID del vehículo
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: estado
+          in: query
+          description: Filtrar por estado de la reparación
+          required: false
+          schema:
+            type: string
+            enum: [en_proceso, completada]
+            example: "en_proceso"
+        - name: fecha_inicio
+          in: query
+          description: Filtrar por fecha de inicio mínima (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2024-01-01"
+        - name: fecha_fin
+          in: query
+          description: Filtrar por fecha de inicio máxima (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2024-01-31"
+      responses:
+        '200':
+          description: Lista de reparaciones obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReparacionConRelaciones'
+                  total:
+                    type: integer
+                    example: 50
+                  paginas:
+                    type: integer
+                    example: 5
+                  pagina:
+                    type: integer
+                    example: 1
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Reparaciones
+      summary: Crear una nueva reparación
+      description: Registra una nueva reparación en el sistema con validación de usuario y vehículo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReparacionRequest'
+            examples:
+              ReparacionBasica:
+                summary: Reparación básica
+                value:
+                  fecha_inicio: "2024-01-15T08:00:00.000Z"
+                  descripcion: "Cambio de aceite y filtro"
+                  usuario_id: 2
+                  vehiculo_id: 1
+              ReparacionCompleta:
+                summary: Reparación completa
+                value:
+                  fecha_inicio: "2024-01-15T09:00:00.000Z"
+                  fecha_fin: "2024-01-15T11:30:00.000Z"
+                  descripcion: "Revisión general del vehículo y ajuste de frenos"
+                  costo: 150.75
+                  usuario_id: 3
+                  vehiculo_id: 2
+      responses:
+        '201':
+          description: Reparación creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Reparación creada exitosamente"
+                  data:
+                    $ref: '#/components/schemas/ReparacionConRelaciones'
+        '400':
+          description: Error en la solicitud
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidacion'
+                  - $ref: '#/components/schemas/ErrorRelacion'
+                  - $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+
+  /reparaciones/{id}:
+    get:
+      tags:
+        - Reparaciones
+      summary: Obtener una reparación por ID
+      description: Retorna los detalles completos de una reparación específica
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la reparación
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Reparación encontrada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReparacionDetallada'
+        '404':
+          description: Reparación no encontrada
+        '500':
+          description: Error interno del servidor
+
+    put:
+      tags:
+        - Reparaciones
+      summary: Actualizar una reparación existente
+      description: Actualiza los datos de una reparación existente con validación de fechas y relaciones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la reparación a actualizar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarReparacionRequest'
+            examples:
+              ActualizacionParcial:
+                summary: Actualización parcial
+                value:
+                  descripcion: "Cambio de aceite, filtro y revisión de frenos"
+                  costo: 120.50
+              ActualizacionCompleta:
+                summary: Actualización completa
+                value:
+                  fecha_inicio: "2024-01-15T10:00:00.000Z"
+                  fecha_fin: "2024-01-15T12:00:00.000Z"
+                  descripcion: "Reparación completa del sistema de frenos"
+                  costo: 200.00
+                  usuario_id: 4
+                  vehiculo_id: 3
+                  estado: "completada"
+      responses:
+        '200':
+          description: Reparación actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Reparación actualizada exitosamente"
+                  data:
+                    $ref: '#/components/schemas/ReparacionConRelaciones'
+        '400':
+          description: Error en la solicitud
+        '404':
+          description: Reparación no encontrada
+        '500':
+          description: Error interno del servidor
+
+    delete:
+      tags:
+        - Reparaciones
+      summary: Eliminar una reparación
+      description: Elimina permanentemente una reparación del sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la reparación a eliminar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Reparación eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Reparación eliminada exitosamente"
+        '404':
+          description: Reparación no encontrada
+        '500':
+          description: Error interno del servidor
+
+  /reparaciones/{id}/completar:
+    patch:
+      tags:
+        - Reparaciones
+      summary: Completar una reparación
+      description: Marca una reparación como completada y establece la fecha de fin automáticamente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la reparación a completar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                costo:
+                  type: number
+                  format: float
+                  description: Costo final de la reparación
+                  example: 175.50
+                  minimum: 0
+      responses:
+        '200':
+          description: Reparación completada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Reparación marcada como completada"
+                  data:
+                    $ref: '#/components/schemas/ReparacionConRelaciones'
+        '400':
+          description: La reparación ya está completada o error en los datos
+        '404':
+          description: Reparación no encontrada
+        '500':
+          description: Error interno del servidor
+
+  /reparaciones/usuario/{usuarioId}:
+    get:
+      tags:
+        - Reparaciones
+      summary: Obtener reparaciones por usuario (mecánico)
+      description: Retorna todas las reparaciones asignadas a un usuario/mecánico específico
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          description: ID del usuario/mecánico
+          schema:
+            type: integer
+            minimum: 1
+            example: 2
+        - name: estado
+          in: query
+          description: Filtrar por estado de la reparación
+          required: false
+          schema:
+            type: string
+            enum: [en_proceso, completada]
+            example: "en_proceso"
+        - name: limite
+          in: query
+          description: Número máximo de reparaciones a retornar
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: Lista de reparaciones del usuario obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReparacionConVehiculo'
+                  total:
+                    type: integer
+                    example: 15
+        '500':
+          description: Error interno del servidor
+
+  /reparaciones/vehiculo/{vehiculoId}:
+    get:
+      tags:
+        - Reparaciones
+      summary: Obtener reparaciones por vehículo
+      description: Retorna el historial de reparaciones de un vehículo específico
+      parameters:
+        - name: vehiculoId
+          in: path
+          required: true
+          description: ID del vehículo
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: limite
+          in: query
+          description: Número máximo de reparaciones a retornar
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+            example: 50
+      responses:
+        '200':
+          description: Historial de reparaciones del vehículo obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReparacionConUsuario'
+                  total:
+                    type: integer
+                    example: 8
+        '500':
+          description: Error interno del servidor
+
+  /reparaciones/estado/en-proceso:
+    get:
+      tags:
+        - Reparaciones
+      summary: Obtener reparaciones en proceso
+      description: Retorna todas las reparaciones que están actualmente en proceso
+      parameters:
+        - name: limite
+          in: query
+          description: Número máximo de reparaciones a retornar
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: Lista de reparaciones en proceso obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReparacionConRelaciones'
+                  total:
+                    type: integer
+                    example: 5
+        '500':
+          description: Error interno del servidor
+
+components:
+  schemas:
+    # Esquema base de Reparación
+    Reparacion:
+      type: object
+      required:
+        - id
+        - fecha_inicio
+        - descripcion
+        - usuario_id
+        - vehiculo_id
+      properties:
+        id:
+          type: integer
+          description: ID único de la reparación
+          example: 1
+        fecha_inicio:
+          type: string
+          format: date-time
+          description: Fecha y hora de inicio de la reparación
+          example: "2024-01-15T08:00:00.000Z"
+        fecha_fin:
+          type: string
+          format: date-time
+          description: Fecha y hora de finalización de la reparación
+          example: "2024-01-15T11:30:00.000Z"
+          nullable: true
+        descripcion:
+          type: string
+          description: Descripción detallada de la reparación
+          example: "Cambio de aceite y filtro de aire"
+        costo:
+          type: number
+          format: float
+          description: Costo total de la reparación
+          example: 150.75
+          minimum: 0
+        estado:
+          type: string
+          enum: [en_proceso, completada]
+          description: Estado actual de la reparación
+          example: "completada"
+          default: "en_proceso"
+        usuario_id:
+          type: integer
+          description: ID del usuario/mecánico responsable
+          example: 2
+        vehiculo_id:
+          type: integer
+          description: ID del vehículo en reparación
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2024-01-10T15:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de última actualización
+          example: "2024-01-10T15:30:00.000Z"
+
+    # Esquemas con relaciones
+    ReparacionConRelaciones:
+      allOf:
+        - $ref: '#/components/schemas/Reparacion'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioResumen'
+            vehiculo:
+              $ref: '#/components/schemas/VehiculoResumen'
+
+    ReparacionDetallada:
+      allOf:
+        - $ref: '#/components/schemas/Reparacion'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioCompleto'
+            vehiculo:
+              allOf:
+                - $ref: '#/components/schemas/VehiculoCompleto'
+                - type: object
+                  properties:
+                    usuario:
+                      $ref: '#/components/schemas/UsuarioResumen'
+
+    ReparacionConVehiculo:
+      allOf:
+        - $ref: '#/components/schemas/Reparacion'
+        - type: object
+          properties:
+            vehiculo:
+              $ref: '#/components/schemas/VehiculoResumen'
+
+    ReparacionConUsuario:
+      allOf:
+        - $ref: '#/components/schemas/Reparacion'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioResumen'
+
+    # Requests
+    CrearReparacionRequest:
+      type: object
+      required:
+        - fecha_inicio
+        - descripcion
+        - usuario_id
+        - vehiculo_id
+      properties:
+        fecha_inicio:
+          type: string
+          format: date-time
+          description: Fecha y hora de inicio de la reparación
+          example: "2024-01-15T08:00:00.000Z"
+        fecha_fin:
+          type: string
+          format: date-time
+          description: Fecha y hora de finalización de la reparación
+          example: "2024-01-15T11:30:00.000Z"
+          nullable: true
+        descripcion:
+          type: string
+          description: Descripción detallada de la reparación
+          example: "Cambio de aceite y filtro de aire"
+          minLength: 10
+          maxLength: 1000
+        costo:
+          type: number
+          format: float
+          description: Costo estimado o real de la reparación
+          example: 150.75
+          minimum: 0
+        usuario_id:
+          type: integer
+          description: ID del usuario/mecánico responsable
+          example: 2
+          minimum: 1
+        vehiculo_id:
+          type: integer
+          description: ID del vehículo en reparación
+          example: 1
+          minimum: 1
+
+    ActualizarReparacionRequest:
+      type: object
+      properties:
+        fecha_inicio:
+          type: string
+          format: date-time
+          description: Nueva fecha y hora de inicio
+          example: "2024-01-15T09:00:00.000Z"
+        fecha_fin:
+          type: string
+          format: date-time
+          description: Nueva fecha y hora de finalización
+          example: "2024-01-15T12:00:00.000Z"
+          nullable: true
+        descripcion:
+          type: string
+          description: Nueva descripción de la reparación
+          example: "Cambio de aceite, filtro y revisión de frenos"
+          minLength: 10
+          maxLength: 1000
+        costo:
+          type: number
+          format: float
+          description: Nuevo costo de la reparación
+          example: 175.50
+          minimum: 0
+        usuario_id:
+          type: integer
+          description: Nuevo ID del usuario/mecánico responsable
+          example: 3
+          minimum: 1
+        vehiculo_id:
+          type: integer
+          description: Nuevo ID del vehículo en reparación
+          example: 2
+          minimum: 1
+        estado:
+          type: string
+          enum: [en_proceso, completada]
+          description: Nuevo estado de la reparación
+          example: "completada"

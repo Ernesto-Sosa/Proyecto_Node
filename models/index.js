@@ -1,5 +1,3 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../helpers/database");
 const Usuario = require('./Usuario');
 const Inventario = require('./Inventario');
 const Reparacion = require('./Reparacion');
@@ -7,9 +5,7 @@ const Vehiculo = require('./Vehiculo');
 const Cita = require('./Cita');
 const Inventario_Reparacion = require('./Inventario_Reparacion');
 
-//Relacion de Uno a Muchos: un usuario puede 
-// tener varios vehiculos pero un vehiculo solo 
-// pertenece a un usuario.
+// Relación de Uno a Muchos: Usuario -> Vehículos
 Usuario.hasMany(Vehiculo, {
     foreignKey: 'usuario_id',
     onDelete: 'CASCADE',
@@ -22,55 +18,74 @@ Vehiculo.belongsTo(Usuario, {
     onUpdate: 'CASCADE'
 });
 
-//Relacion de 1 a M de Vehiculo y Usuario a Reparacion
+// Relación de 1 a M: Usuario y Vehículo -> Reparaciones
 Usuario.hasMany(Reparacion, {
     foreignKey: 'usuario_id',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
 Vehiculo.hasMany(Reparacion, {
     foreignKey: 'vehiculo_id',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
 Reparacion.belongsTo(Usuario, {
     foreignKey: 'usuario_id',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
 Reparacion.belongsTo(Vehiculo, {
     foreignKey: 'vehiculo_id',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
 
-//Relacion de 1 a M de Usuario y Vehiculo a Cita
+// 🔥 CORRECCIÓN CRÍTICA: Relación de 1 a M: Usuario y Vehículo -> Citas
 Usuario.hasMany(Cita, {
     foreignKey: 'usuario_id',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
 Vehiculo.hasMany(Cita, {
     foreignKey: 'vehiculo_id',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
 Cita.belongsTo(Vehiculo, {
-    foreignKey: 'vehiculo_id',
+    foreignKey: 'vehiculo_id', // ✅ CORRECTO
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
 Cita.belongsTo(Usuario, {
-    foreignKey: 'vehiculo_id',
+    foreignKey: 'usuario_id', // ✅ CORREGIDO: estaba 'vehiculo_id'
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
 
-//Relacion de M a M entre Inventario y Reparacion
+// Relación de M a M entre Inventario y Reparación
 Inventario.belongsToMany(Reparacion, {
-    through: "Inventario_Reparacion",
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
+    through: Inventario_Reparacion, // ✅ Usar la referencia del modelo
+    foreignKey: 'inventario_id',
+    otherKey: 'reparacion_id'
 });
 
-module.exports = {Usuario, Inventario, Cita, Inventario_Reparacion, Reparacion, Vehiculo};
+Reparacion.belongsToMany(Inventario, {
+    through: Inventario_Reparacion, // ✅ Usar la referencia del modelo
+    foreignKey: 'reparacion_id',
+    otherKey: 'inventario_id'
+});
+
+module.exports = {
+    Usuario, 
+    Inventario, 
+    Cita, 
+    Inventario_Reparacion, 
+    Reparacion, 
+    Vehiculo
+};

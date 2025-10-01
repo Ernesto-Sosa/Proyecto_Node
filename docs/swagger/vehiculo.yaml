@@ -1,0 +1,504 @@
+tags:
+  - name: Vehículos
+    description: Endpoints para gestión de vehículos del taller
+
+paths:
+  /vehiculos:
+    get:
+      tags:
+        - Vehículos
+      summary: Obtener todos los vehículos
+      description: Retorna una lista paginada de vehículos con opciones de filtrado
+      parameters:
+        - name: pagina
+          in: query
+          description: Número de página para paginación
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limite
+          in: query
+          description: Número de elementos por página (máximo 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+            example: 10
+        - name: usuario_id
+          in: query
+          description: Filtrar por ID de usuario propietario
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: marca
+          in: query
+          description: Filtrar por marca de vehículo
+          required: false
+          schema:
+            type: string
+            example: "Toyota"
+        - name: buscar
+          in: query
+          description: Buscar en marca, modelo o placa
+          required: false
+          schema:
+            type: string
+            example: "Corolla"
+      responses:
+        '200':
+          description: Lista de vehículos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VehiculoConUsuario'
+                  total:
+                    type: integer
+                    example: 50
+                  paginas:
+                    type: integer
+                    example: 5
+                  pagina:
+                    type: integer
+                    example: 1
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Vehículos
+      summary: Crear un nuevo vehículo
+      description: Registra un nuevo vehículo en el sistema con validación de placa única
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearVehiculoRequest'
+            examples:
+              VehiculoBasico:
+                summary: Vehículo básico
+                value:
+                  marca: "Toyota"
+                  modelo: "Corolla"
+                  año: "2020"
+                  placa: "ABC123"
+                  usuario_id: 1
+              VehiculoCompleto:
+                summary: Vehículo completo
+                value:
+                  marca: "Honda"
+                  modelo: "Civic"
+                  año: "2022"
+                  placa: "XYZ789"
+                  usuario_id: 2
+      responses:
+        '201':
+          description: Vehículo creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Vehículo creado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/VehiculoConUsuario'
+        '400':
+          description: Error en la solicitud
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidacion'
+                  - $ref: '#/components/schemas/ErrorRelacion'
+                  - $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+
+  /vehiculos/{id}:
+    get:
+      tags:
+        - Vehículos
+      summary: Obtener un vehículo por ID
+      description: Retorna los detalles completos de un vehículo específico
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del vehículo
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Vehículo encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/VehiculoDetallado'
+        '404':
+          description: Vehículo no encontrado
+        '500':
+          description: Error interno del servidor
+
+    put:
+      tags:
+        - Vehículos
+      summary: Actualizar un vehículo existente
+      description: Actualiza los datos de un vehículo existente con validación de placa única
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del vehículo a actualizar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarVehiculoRequest'
+            examples:
+              ActualizacionParcial:
+                summary: Actualización parcial
+                value:
+                  modelo: "Corolla XLE"
+                  año: "2021"
+              ActualizacionCompleta:
+                summary: Actualización completa
+                value:
+                  marca: "Toyota"
+                  modelo: "Camry"
+                  año: "2023"
+                  placa: "DEF456"
+                  usuario_id: 3
+      responses:
+        '200':
+          description: Vehículo actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Vehículo actualizado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/VehiculoConUsuario'
+        '400':
+          description: Error en la solicitud
+        '404':
+          description: Vehículo no encontrado
+        '500':
+          description: Error interno del servidor
+
+    delete:
+      tags:
+        - Vehículos
+      summary: Eliminar un vehículo
+      description: Elimina permanentemente un vehículo del sistema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del vehículo a eliminar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Vehículo eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Vehículo eliminado exitosamente"
+        '400':
+          description: No se puede eliminar el vehículo porque tiene registros asociados
+        '404':
+          description: Vehículo no encontrado
+        '500':
+          description: Error interno del servidor
+
+  /vehiculos/usuario/{usuarioId}:
+    get:
+      tags:
+        - Vehículos
+      summary: Obtener vehículos por usuario
+      description: Retorna todos los vehículos asociados a un usuario específico
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          description: ID del usuario propietario
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Lista de vehículos del usuario obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vehiculo'
+                  usuario:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      nombre:
+                        type: string
+                        example: "Juan"
+                      apellido:
+                        type: string
+                        example: "Pérez"
+        '404':
+          description: Usuario no encontrado
+        '500':
+          description: Error interno del servidor
+
+  /vehiculos/buscar/placa/{placa}:
+    get:
+      tags:
+        - Vehículos
+      summary: Buscar vehículo por placa
+      description: Busca un vehículo específico por su número de placa (búsqueda case-insensitive)
+      parameters:
+        - name: placa
+          in: path
+          required: true
+          description: Número de placa del vehículo
+          schema:
+            type: string
+            example: "ABC123"
+      responses:
+        '200':
+          description: Vehículo encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/VehiculoConUsuario'
+        '404':
+          description: No se encontró ningún vehículo con esa placa
+        '500':
+          description: Error interno del servidor
+
+  /vehiculos/marcas:
+    get:
+      tags:
+        - Vehículos
+      summary: Obtener marcas disponibles
+      description: Retorna una lista de todas las marcas de vehículos registradas en el sistema
+      responses:
+        '200':
+          description: Lista de marcas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Toyota", "Honda", "Ford", "Chevrolet"]
+        '500':
+          description: Error interno del servidor
+
+components:
+  schemas:
+    # Esquema base de Vehículo
+    Vehiculo:
+      type: object
+      required:
+        - id
+        - marca
+        - modelo
+        - año
+        - placa
+        - usuario_id
+      properties:
+        id:
+          type: integer
+          description: ID único del vehículo
+          example: 1
+        marca:
+          type: string
+          description: Marca del vehículo
+          example: "Toyota"
+        modelo:
+          type: string
+          description: Modelo del vehículo
+          example: "Corolla"
+        año:
+          type: string
+          description: Año del vehículo
+          example: "2020"
+        placa:
+          type: string
+          description: Número de placa del vehículo (único)
+          example: "ABC123"
+        usuario_id:
+          type: integer
+          description: ID del usuario propietario
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2024-01-10T15:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de última actualización
+          example: "2024-01-10T15:30:00.000Z"
+
+    # Esquemas con relaciones
+    VehiculoConUsuario:
+      allOf:
+        - $ref: '#/components/schemas/Vehiculo'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioResumen'
+
+    VehiculoDetallado:
+      allOf:
+        - $ref: '#/components/schemas/Vehiculo'
+        - type: object
+          properties:
+            usuario:
+              $ref: '#/components/schemas/UsuarioCompleto'
+
+    # Requests
+    CrearVehiculoRequest:
+      type: object
+      required:
+        - marca
+        - modelo
+        - año
+        - placa
+        - usuario_id
+      properties:
+        marca:
+          type: string
+          description: Marca del vehículo
+          example: "Toyota"
+          minLength: 2
+          maxLength: 50
+        modelo:
+          type: string
+          description: Modelo del vehículo
+          example: "Corolla"
+          minLength: 1
+          maxLength: 50
+        año:
+          type: string
+          description: Año del vehículo (entre 1900 y año actual + 1)
+          example: "2020"
+          pattern: "^[0-9]{4}$"
+        placa:
+          type: string
+          description: Número de placa (debe ser único en el sistema)
+          example: "ABC123"
+          minLength: 3
+          maxLength: 10
+        usuario_id:
+          type: integer
+          description: ID del usuario propietario
+          example: 1
+          minimum: 1
+
+    ActualizarVehiculoRequest:
+      type: object
+      properties:
+        marca:
+          type: string
+          description: Nueva marca del vehículo
+          example: "Toyota"
+          minLength: 2
+          maxLength: 50
+        modelo:
+          type: string
+          description: Nuevo modelo del vehículo
+          example: "Corolla XLE"
+          minLength: 1
+          maxLength: 50
+        año:
+          type: string
+          description: Nuevo año del vehículo (entre 1900 y año actual + 1)
+          example: "2021"
+          pattern: "^[0-9]{4}$"
+        placa:
+          type: string
+          description: Nueva placa (debe ser única en el sistema)
+          example: "DEF456"
+          minLength: 3
+          maxLength: 10
+        usuario_id:
+          type: integer
+          description: Nuevo ID del usuario propietario
+          example: 2
+          minimum: 1

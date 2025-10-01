@@ -1,0 +1,523 @@
+tags:
+  - name: Inventario
+    description: Endpoints para gestión del inventario del taller
+
+paths:
+  /inventario:
+    get:
+      tags:
+        - Inventario
+      summary: Obtener todos los items del inventario
+      description: Retorna una lista paginada de items del inventario con opciones de filtrado
+      parameters:
+        - name: pagina
+          in: query
+          description: Número de página para paginación
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limite
+          in: query
+          description: Número de elementos por página (máximo 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+            example: 10
+        - name: categoria
+          in: query
+          description: Filtrar por categoría de item
+          required: false
+          schema:
+            type: string
+            example: "repuestos"
+        - name: stockMinimo
+          in: query
+          description: Filtrar items con stock bajo (menor a 5 unidades)
+          required: false
+          schema:
+            type: string
+            enum: [true, false]
+            example: "true"
+        - name: buscar
+          in: query
+          description: Buscar en nombre o descripción
+          required: false
+          schema:
+            type: string
+            example: "aceite"
+      responses:
+        '200':
+          description: Lista de items del inventario obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ItemInventario'
+                  total:
+                    type: integer
+                    example: 50
+                  paginas:
+                    type: integer
+                    example: 5
+                  pagina:
+                    type: integer
+                    example: 1
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Inventario
+      summary: Crear un nuevo item en el inventario
+      description: Agrega un nuevo item al inventario con validación de nombre único
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearItemRequest'
+            examples:
+              RepuestoBasico:
+                summary: Repuesto básico
+                value:
+                  nombre: "Filtro de Aceite"
+                  descripcion: "Filtro de aceite para motor 1.6L"
+                  categoria: "filtros"
+                  precio: 25.50
+                  stock: 10
+              MaterialCompleto:
+                summary: Material completo
+                value:
+                  nombre: "Aceite Motor 5W-30"
+                  descripcion: "Aceite sintético para motor, 1 litro"
+                  categoria: "lubricantes"
+                  precio: 45.00
+                  stock: 25
+      responses:
+        '201':
+          description: Item creado exitosamente en el inventario
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Item creado exitosamente en el inventario"
+                  data:
+                    $ref: '#/components/schemas/ItemInventario'
+        '400':
+          description: Error en la solicitud
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ErrorValidacion'
+                  - $ref: '#/components/schemas/ErrorSimple'
+        '500':
+          description: Error interno del servidor
+
+  /inventario/{id}:
+    get:
+      tags:
+        - Inventario
+      summary: Obtener un item del inventario por ID
+      description: Retorna los detalles de un item específico del inventario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item del inventario
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Item encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ItemInventario'
+        '404':
+          description: Item no encontrado en el inventario
+        '500':
+          description: Error interno del servidor
+
+    put:
+      tags:
+        - Inventario
+      summary: Actualizar un item del inventario
+      description: Actualiza los datos de un item existente en el inventario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item a actualizar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarItemRequest'
+            examples:
+              ActualizacionParcial:
+                summary: Actualización parcial
+                value:
+                  precio: 28.00
+                  stock: 15
+              ActualizacionCompleta:
+                summary: Actualización completa
+                value:
+                  nombre: "Filtro de Aceite Premium"
+                  descripcion: "Filtro de aceite de alta calidad para motor 1.6L"
+                  categoria: "filtros-premium"
+                  precio: 32.50
+                  stock: 20
+      responses:
+        '200':
+          description: Item actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Item actualizado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/ItemInventario'
+        '400':
+          description: Error en la solicitud
+        '404':
+          description: Item no encontrado
+        '500':
+          description: Error interno del servidor
+
+    delete:
+      tags:
+        - Inventario
+      summary: Eliminar un item del inventario
+      description: Elimina permanentemente un item del inventario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item a eliminar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Item eliminado exitosamente del inventario
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Item eliminado exitosamente del inventario"
+        '404':
+          description: Item no encontrado
+        '500':
+          description: Error interno del servidor
+
+  /inventario/{id}/stock:
+    patch:
+      tags:
+        - Inventario
+      summary: Actualizar stock de un item
+      description: Actualiza el stock de un item específico con diferentes operaciones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del item a actualizar
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarStockRequest'
+            examples:
+              IncrementarStock:
+                summary: Incrementar stock
+                value:
+                  stock: 5
+                  operacion: "incrementar"
+              DecrementarStock:
+                summary: Decrementar stock
+                value:
+                  stock: 3
+                  operacion: "decrementar"
+              EstablecerStock:
+                summary: Establecer stock
+                value:
+                  stock: 25
+                  operacion: "establecer"
+      responses:
+        '200':
+          description: Stock actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Stock actualizado exitosamente"
+                  data:
+                    $ref: '#/components/schemas/ItemInventario'
+        '400':
+          description: Error en la solicitud (stock insuficiente, datos inválidos)
+        '404':
+          description: Item no encontrado
+        '500':
+          description: Error interno del servidor
+
+  /inventario/alertas/stock-bajo:
+    get:
+      tags:
+        - Inventario
+      summary: Obtener items con stock bajo
+      description: Retorna items del inventario con stock menor a 5 unidades (alertas)
+      parameters:
+        - name: limite
+          in: query
+          description: Número máximo de items a retornar
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: Lista de items con stock bajo obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ItemInventario'
+                  total:
+                    type: integer
+                    example: 3
+        '500':
+          description: Error interno del servidor
+
+  /inventario/categorias:
+    get:
+      tags:
+        - Inventario
+      summary: Obtener categorías disponibles
+      description: Retorna una lista de todas las categorías de items registradas en el inventario
+      responses:
+        '200':
+          description: Lista de categorías obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    example: ["filtros", "lubricantes", "repuestos", "herramientas"]
+        '500':
+          description: Error interno del servidor
+
+components:
+  schemas:
+    # Esquema base de Item de Inventario
+    ItemInventario:
+      type: object
+      required:
+        - id
+        - nombre
+        - categoria
+        - precio
+        - stock
+      properties:
+        id:
+          type: integer
+          description: ID único del item
+          example: 1
+        nombre:
+          type: string
+          description: Nombre del item
+          example: "Filtro de Aceite"
+        descripcion:
+          type: string
+          description: Descripción detallada del item
+          example: "Filtro de aceite para motor 1.6L"
+          nullable: true
+        categoria:
+          type: string
+          description: Categoría del item
+          example: "filtros"
+        precio:
+          type: number
+          format: float
+          description: Precio unitario del item
+          example: 25.50
+          minimum: 0
+        stock:
+          type: integer
+          description: Cantidad disponible en stock
+          example: 10
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2024-01-10T15:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de última actualización
+          example: "2024-01-10T15:30:00.000Z"
+
+    # Requests
+    CrearItemRequest:
+      type: object
+      required:
+        - nombre
+        - categoria
+        - precio
+        - stock
+      properties:
+        nombre:
+          type: string
+          description: Nombre del item (debe ser único)
+          example: "Filtro de Aceite"
+          minLength: 2
+          maxLength: 100
+        descripcion:
+          type: string
+          description: Descripción detallada del item
+          example: "Filtro de aceite para motor 1.6L"
+          maxLength: 500
+          default: ""
+        categoria:
+          type: string
+          description: Categoría del item
+          example: "filtros"
+          minLength: 2
+          maxLength: 50
+        precio:
+          type: number
+          format: float
+          description: Precio unitario (mayor o igual a 0)
+          example: 25.50
+          minimum: 0
+        stock:
+          type: integer
+          description: Cantidad inicial en stock (entero mayor o igual a 0)
+          example: 10
+          minimum: 0
+
+    ActualizarItemRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+          description: Nuevo nombre del item (debe ser único)
+          example: "Filtro de Aceite Premium"
+          minLength: 2
+          maxLength: 100
+        descripcion:
+          type: string
+          description: Nueva descripción del item
+          example: "Filtro de aceite de alta calidad para motor 1.6L"
+          maxLength: 500
+        categoria:
+          type: string
+          description: Nueva categoría del item
+          example: "filtros-premium"
+          minLength: 2
+          maxLength: 50
+        precio:
+          type: number
+          format: float
+          description: Nuevo precio unitario (mayor o igual a 0)
+          example: 32.50
+          minimum: 0
+        stock:
+          type: integer
+          description: Nueva cantidad en stock (entero mayor o igual a 0)
+          example: 20
+          minimum: 0
+
+    ActualizarStockRequest:
+      type: object
+      required:
+        - stock
+      properties:
+        stock:
+          type: integer
+          description: Cantidad para la operación (entero mayor o igual a 0)
+          example: 5
+          minimum: 0
+        operacion:
+          type: string
+          description: Tipo de operación a realizar
+          enum: [incrementar, decrementar, establecer]
+          default: "establecer"
+          example: "incrementar"

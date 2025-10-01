@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../helpers/database");
+const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
 
 const Usuario = sequelize.define('Usuario', {
     id: {
@@ -27,6 +27,8 @@ const Usuario = sequelize.define('Usuario', {
         type: DataTypes.STRING,
         allowNull: false
     },
+}, {
+    timestamps: true // ✅ Agregar esto
 });
 
 module.exports = Usuario;

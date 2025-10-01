@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info:
+  title: API Taller Automotriz
+  description: API completa para gestión de taller automotriz - Sistema de citas, vehículos, usuarios, reparaciones e inventario
+  version: 1.0.0
+  contact:
+    name: Soporte Técnico
+    email: soporte@talleraautomotriz.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Servidor de desarrollo
+  - url: https://api.talleraautomotriz.com/api
+    description: Servidor de producción

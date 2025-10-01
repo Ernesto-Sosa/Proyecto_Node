@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../helpers/database");
+const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
 
 const Reparacion = sequelize.define('Reparacion', {
     id: {
@@ -13,7 +13,7 @@ const Reparacion = sequelize.define('Reparacion', {
     },
     fecha_fin: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: true
     },
     descripcion: {
         type: DataTypes.STRING,
@@ -31,6 +31,8 @@ const Reparacion = sequelize.define('Reparacion', {
         type: DataTypes.INTEGER,
         allowNull: false
     }
+}, {
+    timestamps: true // ✅ Agregar esto
 });
 
 module.exports = Reparacion;

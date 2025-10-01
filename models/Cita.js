@@ -1,11 +1,11 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../helpers/database");
+const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
 
 const Cita = sequelize.define('Cita', {
     id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
     },
     fecha: {
         type: DataTypes.DATE,
@@ -28,9 +28,11 @@ const Cita = sequelize.define('Cita', {
         allowNull: false
     },
     vehiculo_id: {
-        type:DataTypes.INTEGER,
+        type: DataTypes.INTEGER,
         allowNull: false
     }
+}, {
+    timestamps: true // ✅ Agregar esto
 });
 
 module.exports = Cita;
