@@ -1,4 +1,4 @@
-const { Usuario } = require('../models/Usuario'); // Ajusta la ruta según tu estructura
+const { Usuario } = require('../models'); // Ajusta la ruta según tu estructura
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');

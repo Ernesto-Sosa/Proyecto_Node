@@ -11,8 +11,7 @@ const {
     obtenerCitasPorVehiculo
 } = require('../controllers/citaCont');
 
-// Middleware de autenticación (si lo tienes)
-// const { autenticar } = require('../middleware/auth');
+
 
 router.get('/', obtenerCitas);
 router.get('/:id', obtenerCitaPorId);

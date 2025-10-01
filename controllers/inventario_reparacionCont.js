@@ -1,5 +1,5 @@
 // controllers/inventarioReparacionController.js
-const { Inventario_Reparacion, Reparacion, Inventario } = require('../models/Inventario_Reparacion');
+const { Inventario_Reparacion, Reparacion, Inventario } = require('../models');
 const { Op } = require('sequelize');
 
 // @desc    Agregar item de inventario a una reparación

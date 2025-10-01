@@ -4,7 +4,7 @@ const initModels = async () => {
     try {
         console.log('🔄 Inicializando modelos...');
         
-        // ✅ IMPORTAR MODELOS DENTRO DE LA FUNCIÓN para evitar dependencias circulares
+        
         const Usuario = require('./Usuario');
         const Inventario = require('./Inventario');
         const Reparacion = require('./Reparacion');
@@ -12,10 +12,10 @@ const initModels = async () => {
         const Cita = require('./Cita');
         const Inventario_Reparacion = require('./Inventario_Reparacion');
 
-        // ✅ IMPORTAR RELACIONES
+        
         require('./index');
 
-        // ✅ VERIFICAR MODELOS
+        
         const models = [Usuario, Inventario, Reparacion, Vehiculo, Cita, Inventario_Reparacion];
         models.forEach(model => {
             if (model && model.name) {

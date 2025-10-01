@@ -1,9 +1,7 @@
-const { Cita } = require('../models/Cita'); // Ajusta la ruta según tu estructura
+const { Cita } = require('../models');
 const { Op } = require('sequelize');
 
-// @desc    Obtener todas las citas
-// @route   GET /api/citas
-// @access  Privado
+
 const obtenerCitas = async (req, res) => {
     try {
         const { pagina = 1, limite = 10, estado, fecha } = req.query;
@@ -45,9 +43,7 @@ const obtenerCitas = async (req, res) => {
     }
 };
 
-// @desc    Obtener una cita por ID
-// @route   GET /api/citas/:id
-// @access  Privado
+
 const obtenerCitaPorId = async (req, res) => {
     try {
         const { id } = req.params;
@@ -81,9 +77,7 @@ const obtenerCitaPorId = async (req, res) => {
     }
 };
 
-// @desc    Crear una nueva cita
-// @route   POST /api/citas
-// @access  Privado
+
 const crearCita = async (req, res) => {
     try {
         const { fecha, hora, descripcion, estado, usuario_id, vehiculo_id } = req.body;
@@ -102,7 +96,7 @@ const crearCita = async (req, res) => {
                 fecha,
                 hora,
                 estado: {
-                    [Op.ne]: 'cancelada' // No considerar citas canceladas
+                    [Op.ne]: 'cancelada'
                 }
             }
         });
@@ -118,7 +112,7 @@ const crearCita = async (req, res) => {
             fecha,
             hora,
             descripcion: descripcion || '',
-            estado: estado || 'programada', // Estados: programada, confirmada, en_proceso, completada, cancelada
+            estado: estado || 'programada', 
             usuario_id,
             vehiculo_id
         });
@@ -163,9 +157,7 @@ const crearCita = async (req, res) => {
     }
 };
 
-// @desc    Actualizar una cita
-// @route   PUT /api/citas/:id
-// @access  Privado
+
 const actualizarCita = async (req, res) => {
     try {
         const { id } = req.params;
@@ -187,7 +179,7 @@ const actualizarCita = async (req, res) => {
             
             const citaExistente = await Cita.findOne({
                 where: {
-                    id: { [Op.ne]: id }, // Excluir la cita actual
+                    id: { [Op.ne]: id }, 
                     fecha: fechaActualizada,
                     hora: horaActualizada,
                     estado: {
@@ -255,9 +247,7 @@ const actualizarCita = async (req, res) => {
     }
 };
 
-// @desc    Eliminar una cita
-// @route   DELETE /api/citas/:id
-// @access  Privado
+
 const eliminarCita = async (req, res) => {
     try {
         const { id } = req.params;
@@ -288,9 +278,7 @@ const eliminarCita = async (req, res) => {
     }
 };
 
-// @desc    Obtener citas por usuario
-// @route   GET /api/citas/usuario/:usuarioId
-// @access  Privado
+
 const obtenerCitasPorUsuario = async (req, res) => {
     try {
         const { usuarioId } = req.params;
@@ -322,9 +310,7 @@ const obtenerCitasPorUsuario = async (req, res) => {
     }
 };
 
-// @desc    Obtener citas por vehículo
-// @route   GET /api/citas/vehiculo/:vehiculoId
-// @access  Privado
+
 const obtenerCitasPorVehiculo = async (req, res) => {
     try {
         const { vehiculoId } = req.params;

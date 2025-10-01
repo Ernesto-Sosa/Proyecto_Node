@@ -1,4 +1,4 @@
-const { Reparacion, Usuario, Vehiculo } = require('../models/Reparacion'); // Ajusta la ruta según tu estructura
+const { Reparacion, Usuario, Vehiculo } = require('../models'); // Ajusta la ruta según tu estructura
 const { Op } = require('sequelize');
 
 // @desc    Obtener todas las reparaciones

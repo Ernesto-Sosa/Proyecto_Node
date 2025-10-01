@@ -1,4 +1,4 @@
-const { Vehiculo, Usuario } = require('../models/Vehiculo'); // Ajusta la ruta según tu estructura
+const { Vehiculo, Usuario } = require('../models'); // Ajusta la ruta según tu estructura
 const { Op } = require('sequelize');
 
 // @desc    Obtener todos los vehículos

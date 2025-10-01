@@ -1,4 +1,4 @@
-const { Inventario } = require('../models/Inventario'); // Ajusta la ruta según tu estructura
+const { Inventario } = require('../models'); // Ajusta la ruta según tu estructura
 const { Op } = require('sequelize');
 
 // @desc    Obtener todos los items del inventario

@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../helpers/database"); // ✅ Usar { sequelize }
+const { sequelize } = require("../helpers/database"); 
 
 const Inventario_Reparacion = sequelize.define('Inventario_Reparacion', {
     id: {
@@ -25,7 +25,7 @@ const Inventario_Reparacion = sequelize.define('Inventario_Reparacion', {
         allowNull: false
     }
 }, {
-    timestamps: true // ✅ Agregar esto
+    timestamps: true 
 });
 
 module.exports = Inventario_Reparacion;
